@@ -1,0 +1,67 @@
+{
+  "project": "scribe",
+  "version": "0.1.0",
+  "description": "Scribe — Documentation Generation Tooling extracted from AZAZAEL",
+  "repository": "https://github.com/myzticalbabe/scribe",
+  "license": "CDDL-1.1",
+  "authors": [
+    {
+      "name": "Azazael Contributors",
+      "email": "maintainers@scribe.dev",
+      "url": "https://github.com/myzticalbabe"
+    }
+  ],
+  "keywords": [
+    "documentation",
+    "generation",
+    "mermaid",
+    "api",
+    "python"
+  ],
+  "classifiers": [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Common Development and Distribution License 1.1 (CDDL-1.1)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: 3.16",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Documentation"
+  ],
+  "python_requires": ">=3.10",
+  "dependencies": [],
+  "optional_dependencies": {
+    "dev": [
+      "pytest>=7.0",
+      "pytest-cov>=4.0",
+      "pytest-xdist>=3.0",
+      "black>=23.0",
+      "ruff>=0.1.0",
+      "mypy>=1.0"
+    ],
+    "docs": [
+      "sphinx>=6.0",
+      "sphinx-rtd-theme>=1.0"
+    ]
+  },
+  "entry_points": {
+    "console_scripts": [
+      "scribe=scribe.cli:main"
+    ]
+  },
+  "urls": {
+    "Homepage": "https://github.com/myzticalbabe/scribe",
+    "Repository": "https://github.com/myzticalbabe/scribe",
+    "Issues": "https://github.com/myzticalbabe/scribe/issues",
+    "Documentation": "https://github.com/myzticalbabe/scribe/docs",
+    "Changelog": "https://github.com/myzticalbabe/scribe/blob/main/CHANGELOG.md",
+    "Security": "https://github.com/myzticalbabe/scribe/security/policy"
+  },
+  "manifest_version": 1,
+  "generated_at": "2026-11-18T00:00:00Z"
+}
