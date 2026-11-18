@@ -4,6 +4,7 @@ The list is the funder's own, verbatim, with the page and its stated revision
 date recorded next to it -- so an ineligibility verdict can be traced to a
 source rather than to a recollection.
 """
+
 import json
 import re
 import pathlib
@@ -54,17 +55,31 @@ OUT.parent.mkdir(parents=True, exist_ok=True)
 payload = {
     "source": URL,
     "retrieved": "2026-11-03",
-    "statement": ("People and organisations of these eligible countries can participate on the same "
-                  "terms as those from EU member states; 60% of the funds must go to people from "
-                  "this list for a European dimension."),
-    "notes": ["Two entries were corrected where the source markup is malformed: a missing comma "
-              "between Austria and Azerbaijan, and a spaced dash joining Vietnam to Wallis et "
-              "Futuna Islands."],
+    "statement": (
+        "People and organisations of these eligible countries can participate on the same "
+        "terms as those from EU member states; 60% of the funds must go to people from "
+        "this list for a European dimension."
+    ),
+    "notes": [
+        "Two entries were corrected where the source markup is malformed: a missing comma "
+        "between Austria and Azerbaijan, and a spaced dash joining Vietnam to Wallis et "
+        "Futuna Islands."
+    ],
     "horizon_europe": countries,
 }
-OUT.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+OUT.write_text(
+    json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
+)
 
 print(f"wrote {OUT} with {len(countries)} entries")
-for probe in ("United States", "Netherlands", "United Kingdom", "Canada", "Brazil", "Nigeria", "Kenya"):
+for probe in (
+    "United States",
+    "Netherlands",
+    "United Kingdom",
+    "Canada",
+    "Brazil",
+    "Nigeria",
+    "Kenya",
+):
     hit = probe.casefold() in seen
     print(f"  {'IN ' if hit else 'OUT'} {probe}")

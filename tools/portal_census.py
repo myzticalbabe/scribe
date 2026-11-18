@@ -39,6 +39,7 @@ portal_census.json with its error string, and counts 0 here. A gate that fails
 when someone else's server is down gets switched off, and a switched-off gate
 protects nothing. Stdlib only.
 """
+
 import argparse
 import json
 import re
@@ -47,7 +48,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE_DIR))
@@ -58,9 +59,11 @@ sys.path.insert(0, str(BASE_DIR))
 try:
     from scribe import UNFILLABLE_TYPES, parse_form_schema  # noqa: E402
 except SystemExit:  # scribe exits at import when playwright is missing
-    print("portal_census: scribe.py cannot be imported (playwright missing?). "
-          "The census reads forms through scribe's own parser, so it cannot run here.",
-          file=sys.stderr)
+    print(
+        "portal_census: scribe.py cannot be imported (playwright missing?). "
+        "The census reads forms through scribe's own parser, so it cannot run here.",
+        file=sys.stderr,
+    )
     sys.exit(2)
 
 DATA_DIR = BASE_DIR / "data"
@@ -87,12 +90,16 @@ ACTION = {
     STATE_ERROR: "INVESTIGATE",
 }
 
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
 
 CLIENT_RENDER_MARKERS = re.compile(
     r'__NEXT_DATA__|data-reactroot|id="root"|id="app"\b|ng-version|tfaforms|'
-    r'vue\.js|window\.__NUXT__', re.I)
+    r"vue\.js|window\.__NUXT__",
+    re.I,
+)
 
 
 def fillable_fields(schema: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -139,12 +146,15 @@ def fetch(url: str, timeout: int = 12) -> Tuple[int, str, str, int, str]:
     and "ERROR" that cannot say whether it was DNS, TLS or a timeout is a state
     the next person has to re-derive by hand.
     """
-    req = urllib.request.Request(url, headers={
-        "User-Agent": UA,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "identity",
-    })
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": UA,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "identity",
+        },
+    )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read(4_000_000)
@@ -155,7 +165,13 @@ def fetch(url: str, timeout: int = 12) -> Tuple[int, str, str, int, str]:
             body = exc.read(200_000).decode("utf-8", "replace")
         except Exception:
             body = ""
-        return exc.code, body, getattr(exc, "url", url), len(body), f"HTTP {exc.code} {exc.reason}"
+        return (
+            exc.code,
+            body,
+            getattr(exc, "url", url),
+            len(body),
+            f"HTTP {exc.code} {exc.reason}",
+        )
     except Exception as exc:
         return 0, "", url, 0, f"{type(exc).__name__}: {exc}"
 
@@ -183,9 +199,16 @@ def census_one(portal: Dict[str, Any], timeout: int) -> Dict[str, Any]:
         "action": ACTION[state],
         "client_rendered": bool(CLIENT_RENDER_MARKERS.search(html or "")),
         "field_count": len(fields),
-        "fields": {n: {"tag": s["tag"], "type": s["type"], "required": s["required"],
-                       "maxlength": s["maxlength"], "options": len(s["options"])}
-                   for n, s in sorted(fields.items())},
+        "fields": {
+            n: {
+                "tag": s["tag"],
+                "type": s["type"],
+                "required": s["required"],
+                "maxlength": s["maxlength"],
+                "options": len(s["options"]),
+            }
+            for n, s in sorted(fields.items())
+        },
         "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
@@ -211,8 +234,8 @@ def to_program(record: Dict[str, Any]) -> Dict[str, Any]:
         "name": record["name"],
         "url": record["url"],
         "description": f"Discovered by tools/portal_census.py on {record['checked_at']} "
-                       f"({record['state']}, {record['field_count']} fillable fields) — "
-                       f"{record['category']}, audience {','.join(record['audience']) or 'unspecified'}",
+        f"({record['state']}, {record['field_count']} fillable fields) — "
+        f"{record['category']}, audience {','.join(record['audience']) or 'unspecified'}",
         "fields": fields,
         "required_docs": [],
         "bypass_config": {},
@@ -232,66 +255,128 @@ def self_test() -> int:
 
     def check(name: str, got: Any, want: Any) -> None:
         ok = got == want
-        print(f"  [selftest] {name}: {'ok' if ok else f'FAIL got={got!r} want={want!r}'}")
+        print(
+            f"  [selftest] {name}: {'ok' if ok else f'FAIL got={got!r} want={want!r}'}"
+        )
         if not ok:
             failures.append(name)
 
-    check("plain text is not a form", classify(200, "<html><body>hello</body></html>"), STATE_NONE)
-    check("search box only is SEARCH_ONLY, not a form",
-          classify(200, '<form><input name="q" type="search"></form>'), STATE_SEARCH)
-    check("three fields + textarea is a form",
-          classify(200, '<form><input name="a" required><input name="b">'
-                        '<textarea name="c" maxlength="4000"></textarea></form>'), STATE_FORM)
+    check(
+        "plain text is not a form",
+        classify(200, "<html><body>hello</body></html>"),
+        STATE_NONE,
+    )
+    check(
+        "search box only is SEARCH_ONLY, not a form",
+        classify(200, '<form><input name="q" type="search"></form>'),
+        STATE_SEARCH,
+    )
+    check(
+        "three fields + textarea is a form",
+        classify(
+            200,
+            '<form><input name="a" required><input name="b">'
+            '<textarea name="c" maxlength="4000"></textarea></form>',
+        ),
+        STATE_FORM,
+    )
     # Both controls below are the real pages that produced false positives on
     # 2026-11-03, reduced to their shape. They must never score as a form again.
-    check("grants.gov search panel is not an application form",
-          classify(200, '<form><select name="dateRange"></select><input name="inp-CFDA">'
-                        '<input name="inp-keywords"><input name="inp-opportunity-number">'
-                        '<input name="search" maxlength="100"><select name="sortby"></select></form>'),
-          STATE_SEARCH)
-    check("wellcome newsletter box is not an application form",
-          classify(200, '<form><input name="search"><input name="subscriberFirstName">'
-                        '<input name="subscriberLastName"><input type="email" name="subscriberEmailAddress">'
-                        '<select name="subscriberResearch"></select></form>'),
-          STATE_SEARCH)
-    check("four inputs and no textarea is a query panel",
-          classify(200, '<form><input name="a"><input name="b"><input name="c"><input name="d"></form>'),
-          STATE_SEARCH)
-    check("email + password is AUTH_WALL, not SEARCH_ONLY",
-          classify(200, '<form><input name="e" type="email"><input name="p" type="password">'
-                        '<input type="submit"></form>'), STATE_AUTH)
+    check(
+        "grants.gov search panel is not an application form",
+        classify(
+            200,
+            '<form><select name="dateRange"></select><input name="inp-CFDA">'
+            '<input name="inp-keywords"><input name="inp-opportunity-number">'
+            '<input name="search" maxlength="100"><select name="sortby"></select></form>',
+        ),
+        STATE_SEARCH,
+    )
+    check(
+        "wellcome newsletter box is not an application form",
+        classify(
+            200,
+            '<form><input name="search"><input name="subscriberFirstName">'
+            '<input name="subscriberLastName"><input type="email" name="subscriberEmailAddress">'
+            '<select name="subscriberResearch"></select></form>',
+        ),
+        STATE_SEARCH,
+    )
+    check(
+        "four inputs and no textarea is a query panel",
+        classify(
+            200,
+            '<form><input name="a"><input name="b"><input name="c"><input name="d"></form>',
+        ),
+        STATE_SEARCH,
+    )
+    check(
+        "email + password is AUTH_WALL, not SEARCH_ONLY",
+        classify(
+            200,
+            '<form><input name="e" type="email"><input name="p" type="password">'
+            '<input type="submit"></form>',
+        ),
+        STATE_AUTH,
+    )
     check("403 is REFUSED", classify(403, ""), STATE_REFUSED)
     check("429 is REFUSED", classify(429, ""), STATE_REFUSED)
     check("500 is ERROR", classify(500, ""), STATE_ERROR)
     check("status 0 (no response) is ERROR", classify(0, ""), STATE_ERROR)
-    check("hidden/submit/file inputs do not make a form",
-          classify(200, '<form><input type="hidden" name="t"><input type="file" name="f">'
-                        '<input type="submit" name="s"></form>'), STATE_NONE)
+    check(
+        "hidden/submit/file inputs do not make a form",
+        classify(
+            200,
+            '<form><input type="hidden" name="t"><input type="file" name="f">'
+            '<input type="submit" name="s"></form>',
+        ),
+        STATE_NONE,
+    )
 
     # Every state must be produced by at least one control above, or the state
     # machine has a branch nothing exercises.
-    reached = {classify(200, "<html><body>hello</body></html>"),
-               classify(200, '<form><input name="q"></form>'),
-               classify(200, '<form><input name="a"><input name="b">'
-                            '<textarea name="c"></textarea></form>'),
-               classify(200, '<form><input name="p" type="password"></form>'),
-               classify(403, ""), classify(500, "")}
+    reached = {
+        classify(200, "<html><body>hello</body></html>"),
+        classify(200, '<form><input name="q"></form>'),
+        classify(
+            200,
+            '<form><input name="a"><input name="b">'
+            '<textarea name="c"></textarea></form>',
+        ),
+        classify(200, '<form><input name="p" type="password"></form>'),
+        classify(403, ""),
+        classify(500, ""),
+    }
     check("all six states reached by controls", sorted(reached), sorted(STATES))
 
-    print(f"  [selftest] {'clean' if not failures else str(len(failures)) + ' failure(s)'}")
+    print(
+        f"  [selftest] {'clean' if not failures else str(len(failures)) + ' failure(s)'}"
+    )
     return 1 if failures else 0
 
 
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(prog="portal_census", description=__doc__)
-    parser.add_argument("--selftest", action="store_true", help="pure controls, no network")
-    parser.add_argument("--run", action="store_true", help="census every registered portal")
-    parser.add_argument("--emit-programs", action="store_true",
-                        help="write measured FORM_STATIC portals to data/discovered_programs.json")
+    parser.add_argument(
+        "--selftest", action="store_true", help="pure controls, no network"
+    )
+    parser.add_argument(
+        "--run", action="store_true", help="census every registered portal"
+    )
+    parser.add_argument(
+        "--emit-programs",
+        action="store_true",
+        help="write measured FORM_STATIC portals to data/discovered_programs.json",
+    )
     parser.add_argument("--registry", default=str(REGISTRY))
     parser.add_argument("--timeout", type=int, default=12)
-    parser.add_argument("--expect", action="append", default=[],
-                        metavar="ID=STATE", help="assert a portal's state; repeatable")
+    parser.add_argument(
+        "--expect",
+        action="append",
+        default=[],
+        metavar="ID=STATE",
+        help="assert a portal's state; repeatable",
+    )
     args = parser.parse_args(argv[1:])
 
     if args.selftest:
@@ -332,12 +417,18 @@ def main(argv: List[str]) -> int:
         print("#" * 72, flush=True)
 
         for portal in portals:
-            print(f"\n=== {portal['id']}  [{portal['category']}]  {portal['url']}", flush=True)
+            print(
+                f"\n=== {portal['id']}  [{portal['category']}]  {portal['url']}",
+                flush=True,
+            )
             record = census_one(portal, args.timeout)
             records.append(record)
-            print(f"    {record['state']:12s} {record['action']:22s} http={record['http_status']} "
-                  f"{record['bytes']}B {record['ms']}ms fields={record['field_count']}"
-                  f"{'  (client-rendered)' if record['client_rendered'] else ''}", flush=True)
+            print(
+                f"    {record['state']:12s} {record['action']:22s} http={record['http_status']} "
+                f"{record['bytes']}B {record['ms']}ms fields={record['field_count']}"
+                f"{'  (client-rendered)' if record['client_rendered'] else ''}",
+                flush=True,
+            )
             if record["error"]:
                 print(f"      error: {record['error']}", flush=True)
             if record["fields"]:
@@ -347,7 +438,10 @@ def main(argv: List[str]) -> int:
                     req = " required" if spec["required"] else ""
                     print(f"      {spec['tag']:8s} {name}{req}{cap}", flush=True)
                 if len(record["fields"]) > len(shown):
-                    print(f"      ... {len(record['fields']) - len(shown)} more", flush=True)
+                    print(
+                        f"      ... {len(record['fields']) - len(shown)} more",
+                        flush=True,
+                    )
             if record["final_url"]:
                 print(f"      redirected to {record['final_url']}", flush=True)
 
@@ -370,7 +464,9 @@ def main(argv: List[str]) -> int:
             print(f"  {category:26s} {filled}")
 
         drivable = [r["id"] for r in records if r["state"] == STATE_FORM]
-        print(f"\nScribe can drive today ({len(drivable)}): {', '.join(drivable) or 'none'}")
+        print(
+            f"\nScribe can drive today ({len(drivable)}): {', '.join(drivable) or 'none'}"
+        )
         for state in (STATE_AUTH, STATE_REFUSED, STATE_ERROR, STATE_SEARCH, STATE_NONE):
             ids = [r["id"] for r in records if r["state"] == state]
             if ids:
@@ -394,13 +490,14 @@ def main(argv: List[str]) -> int:
                 "counts": counts,
                 "log": str(log_path.name),
                 "notes": "Read-only census. A state is a measurement of one page at one "
-                         "moment; a funder redesign invalidates it, so re-run before "
-                         "trusting a row.",
+                "moment; a funder redesign invalidates it, so re-run before "
+                "trusting a row.",
             },
             "portals": records,
         }
-        CENSUS_OUT.write_text(json.dumps(payload, indent=2, ensure_ascii=False),
-                              encoding="utf-8")
+        CENSUS_OUT.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         print(f"\nwrote {CENSUS_OUT.name}")
 
         if args.emit_programs:
@@ -409,20 +506,32 @@ def main(argv: List[str]) -> int:
             # defaults to the locale codec, so ensure_ascii=False produced a
             # cp1252 file that scribe then failed to read as UTF-8 — the run
             # wrote a program list its own filler could not open.
-            PROGRAMS_OUT.write_text(json.dumps(
-                {"_meta": {"schema": "scribe/discovered-programs@1",
-                           "emitted_at": payload["_meta"]["ran_at"],
-                           "from": CENSUS_OUT.name,
-                           "note": "Measured by the census, not written by hand. Scribe "
-                                   "merges these into PROGRAMS at import when this file "
-                                   "is present."},
-                 "programs": programs}, indent=2, ensure_ascii=False), encoding="utf-8")
+            PROGRAMS_OUT.write_text(
+                json.dumps(
+                    {
+                        "_meta": {
+                            "schema": "scribe/discovered-programs@1",
+                            "emitted_at": payload["_meta"]["ran_at"],
+                            "from": CENSUS_OUT.name,
+                            "note": "Measured by the census, not written by hand. Scribe "
+                            "merges these into PROGRAMS at import when this file "
+                            "is present.",
+                        },
+                        "programs": programs,
+                    },
+                    indent=2,
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
             print(f"wrote {PROGRAMS_OUT.name} with {len(programs)} program(s)")
 
         errors = [r["id"] for r in records if r["state"] == STATE_ERROR]
-        print(f"\n{counts[STATE_FORM]} drivable | {counts[STATE_AUTH]} credential-walled | "
-              f"{counts[STATE_REFUSED]} refused | {counts[STATE_SEARCH] + counts[STATE_NONE]} need a hop | "
-              f"{counts[STATE_ERROR]} error")
+        print(
+            f"\n{counts[STATE_FORM]} drivable | {counts[STATE_AUTH]} credential-walled | "
+            f"{counts[STATE_REFUSED]} refused | {counts[STATE_SEARCH] + counts[STATE_NONE]} need a hop | "
+            f"{counts[STATE_ERROR]} error"
+        )
         if errors:
             print("unreachable (recorded, not fatal): " + ", ".join(errors))
         if failed:

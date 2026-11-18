@@ -17,7 +17,13 @@ Usage:
   python scribe.py --list-programs
 """
 
-import json, os, re, sys, time, argparse, asyncio, random
+import json
+import re
+import sys
+import time
+import argparse
+import asyncio
+import random
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Any, Tuple
@@ -25,7 +31,9 @@ from typing import Optional, Dict, List, Any, Tuple
 try:
     from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 except ImportError:
-    print("playwright not installed. pip install playwright && playwright install chromium")
+    print(
+        "playwright not installed. pip install playwright && playwright install chromium"
+    )
     sys.exit(1)
 
 BASE_DIR = Path(__file__).parent
@@ -40,20 +48,23 @@ for d in (PROFILES_DIR, SESSIONS_DIR, EVIDENCE_DIR, LOGS_DIR):
 
 # ── Grant Program Registry ──────────────────────────────────────────────
 
+
 @dataclass
 class GrantProgram:
     key: str
     name: str
     url: str
     description: str
-    fields: Dict[str, str]           # profile_key -> CSS selector
-    required_docs: List[str]         # file keys from profile
-    bypass_config: Dict[str, Any]    # cloudflare, recaptcha, etc.
+    fields: Dict[str, str]  # profile_key -> CSS selector
+    required_docs: List[str]  # file keys from profile
+    bypass_config: Dict[str, Any]  # cloudflare, recaptcha, etc.
     submit_selector: str
     success_indicators: List[str]
     dry_run_supported: bool = True
-    form_available: bool = True      # whether a web form exists
-    application_method: str = "web_form"  # "web_form", "github_issue", "email", "manual"
+    form_available: bool = True  # whether a web form exists
+    application_method: str = (
+        "web_form"  # "web_form", "github_issue", "email", "manual"
+    )
     # Inclusive numeric bounds the funder states in prose but the HTML does not
     # enforce with min/max. A value outside them is rejected server-side, which
     # reads back as an unlabelled failure, so check it before submitting.
@@ -65,6 +76,7 @@ class GrantProgram:
     # United States is not on that list. Filling the form for an ineligible
     # applicant is the same defect as submitting one the page would reject.
     eligible_regions: Tuple[str, ...] = ()
+
 
 PROGRAMS: Dict[str, GrantProgram] = {
     "epic_megagrants": GrantProgram(
@@ -85,7 +97,12 @@ PROGRAMS: Dict[str, GrantProgram] = {
         required_docs=["pitch_deck", "prototype_video", "github_repo"],
         bypass_config={"cloudflare": True, "recaptcha": "v2"},
         submit_selector="button[type='submit'], button[data-testid='submit-application'], input[type='submit']",
-        success_indicators=["application submitted", "confirmation", "thank you", "received"],
+        success_indicators=[
+            "application submitted",
+            "confirmation",
+            "thank you",
+            "received",
+        ],
         form_available=False,
         application_method="manual",
     ),
@@ -122,7 +139,13 @@ PROGRAMS: Dict[str, GrantProgram] = {
         required_docs=["proposal", "budget", "timeline"],
         bypass_config={"cloudflare": False},
         submit_selector="input[type='submit']",
-        success_indicators=["submitted", "thank you", "reference number", "received", "success"],
+        success_indicators=[
+            "submitted",
+            "thank you",
+            "reference number",
+            "received",
+            "success",
+        ],
         bounds={"amount": (5000, 50000)},
         eligible_regions=("horizon_europe",),
     ),
@@ -197,7 +220,13 @@ PROGRAMS: Dict[str, GrantProgram] = {
         required_docs=["proposal", "budget_breakdown", "milestones"],
         bypass_config={"cloudflare": False},
         submit_selector="input[type='submit']",
-        success_indicators=["submitted", "thank you", "reference number", "received", "success"],
+        success_indicators=[
+            "submitted",
+            "thank you",
+            "reference number",
+            "received",
+            "success",
+        ],
         form_available=True,
         application_method="web_form",
         bounds={"amount": (5000, 50000)},
@@ -206,6 +235,7 @@ PROGRAMS: Dict[str, GrantProgram] = {
 }
 
 # ── Measured programs (evolution) ───────────────────────────────────────
+
 
 def load_discovered_programs(path: Path = None) -> int:
     """Merge forms measured by tools/portal_census.py into the registry.
@@ -226,8 +256,10 @@ def load_discovered_programs(path: Path = None) -> int:
     try:
         blob = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        print(f"  [EVOLVE] {path.name} unreadable ({exc!r}); "
-              f"using the hand-written registry only")
+        print(
+            f"  [EVOLVE] {path.name} unreadable ({exc!r}); "
+            f"using the hand-written registry only"
+        )
         return 0
     added = 0
     skipped = 0
@@ -254,7 +286,9 @@ def load_discovered_programs(path: Path = None) -> int:
             required_docs=[],
             bypass_config={},
             submit_selector=entry.get("submit_selector", "input[type='submit']"),
-            success_indicators=entry.get("success_indicators", ["submitted", "received"]),
+            success_indicators=entry.get(
+                "success_indicators", ["submitted", "received"]
+            ),
             form_available=True,
             application_method="web_form",
         )
@@ -262,14 +296,17 @@ def load_discovered_programs(path: Path = None) -> int:
     if added:
         print(f"  [EVOLVE] {added} measured program(s) merged from {path.name}")
     if skipped:
-        print(f"  [EVOLVE] {skipped} measured program(s) not merged: URL already registered "
-              f"by hand (a measurement cannot inherit funder eligibility rules)")
+        print(
+            f"  [EVOLVE] {skipped} measured program(s) not merged: URL already registered "
+            f"by hand (a measurement cannot inherit funder eligibility rules)"
+        )
     return added
 
 
 DISCOVERED_PROGRAMS = load_discovered_programs()
 
 # ── Profile Schema ──────────────────────────────────────────────────────
+
 
 @dataclass
 class ProjectProfile:
@@ -328,7 +365,11 @@ class ProjectProfile:
         semantic available for an opaque id, and it is passed in rather than read
         here so this method stays pure and testable without a browser.
         """
-        if program_key and program_key in self.overrides and key in self.overrides[program_key]:
+        if (
+            program_key
+            and program_key in self.overrides
+            and key in self.overrides[program_key]
+        ):
             return self.overrides[program_key][key]
         for candidate in [key] + FIELD_ALIASES.get(key, []):
             for holder in (getattr(self, candidate, ""), self.extra.get(candidate, "")):
@@ -337,7 +378,9 @@ class ProjectProfile:
                 # `budget` in a real profile is a path to a spreadsheet, not a
                 # number. Skipping it lets the next candidate answer the field;
                 # returning it would blank a field that had a usable answer.
-                if _LOCAL_PATH_RE.search(str(holder)) and not re.match(r"^https?://", str(holder)):
+                if _LOCAL_PATH_RE.search(str(holder)) and not re.match(
+                    r"^https?://", str(holder)
+                ):
                     continue
                 return _text_safe(key, label, str(holder))
 
@@ -366,7 +409,9 @@ class ProjectProfile:
             holder = getattr(self, candidate, "") or self.extra.get(candidate, "")
             if holder in ("", None) or isinstance(holder, (dict, list)):
                 continue
-            if _LOCAL_PATH_RE.search(str(holder)) and not re.match(r"^https?://", str(holder)):
+            if _LOCAL_PATH_RE.search(str(holder)) and not re.match(
+                r"^https?://", str(holder)
+            ):
                 continue
             return str(holder)
         name = (self.contact_name or "").strip()
@@ -461,7 +506,7 @@ _EXCLUSIVE_TRIGGERS = {"multimedia": "prototype_video", "video": "prototype_vide
 
 
 _LOCAL_PATH_RE = re.compile(
-    r"^(?:[A-Za-z]:[\\/]|\\.{0,2}/|\\\\|profiles[\\/])"          # a path
+    r"^(?:[A-Za-z]:[\\/]|\\.{0,2}/|\\\\|profiles[\\/])"  # a path
     r"|\.(?:xlsx?|pdf|mp4|mov|png|jpe?g|zip|docx?|csv|json|md)$",  # or a filename
     re.I,
 )
@@ -480,10 +525,14 @@ def _text_safe(name: str, label: str, value: str) -> str:
         return ""
     tokens = set(field_tokens(name, label))
     if _URL_FIELD_WORDS & tokens and not re.match(r"^https?://", value):
-        print(f"  [GAP] {name}: form asks for a URL, value {value[:40]!r} is not one; left blank")
+        print(
+            f"  [GAP] {name}: form asks for a URL, value {value[:40]!r} is not one; left blank"
+        )
         return ""
     if _LOCAL_PATH_RE.search(value) and not re.match(r"^https?://", value):
-        print(f"  [GAP] {name}: {value[:40]!r} is a local path, not a value the funder can read; left blank")
+        print(
+            f"  [GAP] {name}: {value[:40]!r} is a local path, not a value the funder can read; left blank"
+        )
         return ""
     return value
 
@@ -506,7 +555,16 @@ def field_tokens(*texts: str) -> List[str]:
 
 
 # Input types that are never fillable from a profile string.
-UNFILLABLE_TYPES = {"submit", "button", "file", "hidden", "checkbox", "radio", "reset", "image"}
+UNFILLABLE_TYPES = {
+    "submit",
+    "button",
+    "file",
+    "hidden",
+    "checkbox",
+    "radio",
+    "reset",
+    "image",
+}
 
 
 def parse_form_schema(html: str) -> Dict[str, Dict[str, Any]]:
@@ -518,7 +576,12 @@ def parse_form_schema(html: str) -> Dict[str, Dict[str, Any]]:
     schema: Dict[str, Dict[str, Any]] = {}
 
     def attrs(blob: str) -> Dict[str, str]:
-        return {k.lower(): v for k, v in re.findall(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"', blob)}
+        return {
+            k.lower(): v
+            for k, v in re.findall(
+                r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"', blob
+            )
+        }
 
     def maxlen(a: Dict[str, str]) -> int:
         raw = a.get("maxlength", "")
@@ -545,40 +608,72 @@ def parse_form_schema(html: str) -> Dict[str, Dict[str, Any]]:
         name = a.get("name", "").strip()
         if not name:
             continue
-        schema[name] = {"tag": "input", "type": a.get("type", "text").lower(),
-                        "required": required(a), "maxlength": maxlen(a), "options": []}
+        schema[name] = {
+            "tag": "input",
+            "type": a.get("type", "text").lower(),
+            "required": required(a),
+            "maxlength": maxlen(a),
+            "options": [],
+        }
 
     for m in re.finditer(r"<select([^>]*)>(.*?)</select>", html, re.I | re.S):
         a = attrs(m.group(1))
         name = a.get("name", "").strip()
         if not name:
             continue
-        schema[name] = {"tag": "select", "type": "select", "required": required(a),
-                        "maxlength": 0,
-                        "options": [o for o in re.findall(r'<option[^>]*value="([^"]*)"', m.group(2)) if o]}
+        schema[name] = {
+            "tag": "select",
+            "type": "select",
+            "required": required(a),
+            "maxlength": 0,
+            "options": [
+                o for o in re.findall(r'<option[^>]*value="([^"]*)"', m.group(2)) if o
+            ],
+        }
 
     for m in re.finditer(r"<textarea([^>]*)>", html, re.I):
         a = attrs(m.group(1))
         name = a.get("name", "").strip()
         if not name:
             continue
-        schema[name] = {"tag": "textarea", "type": "textarea", "required": required(a),
-                        "maxlength": maxlen(a), "options": []}
+        schema[name] = {
+            "tag": "textarea",
+            "type": "textarea",
+            "required": required(a),
+            "maxlength": maxlen(a),
+            "options": [],
+        }
 
     return schema
 
 
-def audit_submission(schema: Dict[str, Dict[str, Any]], values: Dict[str, str],
-                     bounds: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def audit_submission(
+    schema: Dict[str, Dict[str, Any]],
+    values: Dict[str, str],
+    bounds: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """What the page itself would reject. A required-empty field is a stop, not a retry."""
-    missing = [n for n, m in schema.items()
-               if m["required"] and m["type"] not in UNFILLABLE_TYPES
-               and not str(values.get(n, "")).strip()]
-    overflow = [n for n, v in values.items()
-                if schema.get(n, {}).get("maxlength") and len(str(v)) > schema[n]["maxlength"]]
+    missing = [
+        n
+        for n, m in schema.items()
+        if m["required"]
+        and m["type"] not in UNFILLABLE_TYPES
+        and not str(values.get(n, "")).strip()
+    ]
+    overflow = [
+        n
+        for n, v in values.items()
+        if schema.get(n, {}).get("maxlength") and len(str(v)) > schema[n]["maxlength"]
+    ]
     out_of_bounds = []
     for name, (low, high) in (bounds or {}).items():
-        raw = str(values.get(name, "")).strip().replace(",", "").replace("$", "").replace("\u20ac", "")
+        raw = (
+            str(values.get(name, ""))
+            .strip()
+            .replace(",", "")
+            .replace("$", "")
+            .replace("\u20ac", "")
+        )
         if not raw:
             continue
         try:
@@ -588,12 +683,14 @@ def audit_submission(schema: Dict[str, Dict[str, Any]], values: Dict[str, str],
             continue
         if not low <= number <= high:
             out_of_bounds.append(f"{name}={number:g} outside [{low:g}, {high:g}]")
-    return {"ok": not missing and not overflow and not out_of_bounds,
-            "missing_required": missing,
-            "overflow": overflow,
-            "out_of_bounds": out_of_bounds,
-            "filled": sorted(values),
-            "field_count": len(schema)}
+    return {
+        "ok": not missing and not overflow and not out_of_bounds,
+        "missing_required": missing,
+        "overflow": overflow,
+        "out_of_bounds": out_of_bounds,
+        "filled": sorted(values),
+        "field_count": len(schema),
+    }
 
 
 def load_page_feedback(program_key: str) -> Optional[Dict[str, Any]]:
@@ -607,9 +704,12 @@ def load_page_feedback(program_key: str) -> Optional[Dict[str, Any]]:
         # which round-trips until a field name is not representable in it.
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        print(f"  [WARN] page feedback unreadable at {path}: {exc!r}; "
-              f"starting with no prior verdict")
+        print(
+            f"  [WARN] page feedback unreadable at {path}: {exc!r}; "
+            f"starting with no prior verdict"
+        )
         return None
+
 
 # ── Stealth Browser Session ─────────────────────────────────────────────
 
@@ -628,6 +728,7 @@ STEALTH_HEADERS = {
     "Sec-CH-UA-Platform": '"Windows"',
 }
 
+
 class ScribeSession:
     def __init__(self, program: GrantProgram, session_id: str = None):
         self.program = program
@@ -643,7 +744,7 @@ class ScribeSession:
 
     async def start(self, headless: bool = True):
         self.playwright = await async_playwright().start()
-        
+
         # Launch with stealth args
         self.browser = await self.playwright.chromium.launch(
             headless=headless,
@@ -654,7 +755,7 @@ class ScribeSession:
                 "--disable-setuid-sandbox",
                 "--disable-web-security",
                 "--disable-features=IsolateOrigins,site-per-process",
-            ]
+            ],
         )
 
         # Create context with stealth settings
@@ -702,7 +803,10 @@ class ScribeSession:
             await self.page.wait_for_load_state("networkidle", timeout=120000)
             # Check if we're past the challenge
             content = await self.page.content()
-            if "challenge" in content.lower() or "cf-browser-verification" in content.lower():
+            if (
+                "challenge" in content.lower()
+                or "cf-browser-verification" in content.lower()
+            ):
                 # Still in challenge, wait more
                 await asyncio.sleep(5)
                 await self.page.wait_for_load_state("networkidle", timeout=60000)
@@ -730,18 +834,24 @@ class ScribeSession:
         # is read once, for every field, before any value is resolved.
         labels = await self._read_labels(list(self.schema.keys()))
         if labels:
-            print(f"  [LABEL] read {sum(1 for v in labels.values() if v)} label(s) from the page")
+            print(
+                f"  [LABEL] read {sum(1 for v in labels.values() if v)} label(s) from the page"
+            )
 
         for name, meta in self.schema.items():
             if meta["type"] in UNFILLABLE_TYPES:
                 continue
-            value = profile.get_field(name, self.program.key, label=labels.get(name, ""))
+            value = profile.get_field(
+                name, self.program.key, label=labels.get(name, "")
+            )
             if not value:
                 continue
 
             limit = meta.get("maxlength") or 0
             if limit and len(value) > limit:
-                print(f"  [TRUNC] {name}: {len(value)} -> {limit} chars (page maxlength)")
+                print(
+                    f"  [TRUNC] {name}: {len(value)} -> {limit} chars (page maxlength)"
+                )
                 value = value[:limit]
 
             selector = f"{meta['tag']}[name='{name}']"
@@ -775,17 +885,22 @@ class ScribeSession:
                 # typed.
                 if await self._fill_via_dom(name, meta, value):
                     self.attempted[name] = value
-                    print(f"  [FILL*] {name} <- {value[:50]!r} (js fallback: {type(exc).__name__})")
+                    print(
+                        f"  [FILL*] {name} <- {value[:50]!r} (js fallback: {type(exc).__name__})"
+                    )
                 else:
-                    print(f"  [WARN] {name}: {type(exc).__name__} (value resolved, fill failed)")
+                    print(
+                        f"  [WARN] {name}: {type(exc).__name__} (value resolved, fill failed)"
+                    )
 
         return True
 
     async def _fill_via_dom(self, name: str, meta: Dict[str, Any], value: str) -> bool:
         """Last resort for a field the page lists but will not let Playwright drive."""
         try:
-            return bool(await self.page.evaluate(
-                """([sel, value]) => {
+            return bool(
+                await self.page.evaluate(
+                    """([sel, value]) => {
                     const el = document.querySelector(sel);
                     if (!el) return false;
                     const setter = Object.getOwnPropertyDescriptor(
@@ -797,7 +912,10 @@ class ScribeSession:
                     el.dispatchEvent(new Event('change', {bubbles: true}));
                     el.dispatchEvent(new Event('blur', {bubbles: true}));
                     return true;
-                }""", [f"{meta['tag']}[name='{name}']", value]))
+                }""",
+                    [f"{meta['tag']}[name='{name}']", value],
+                )
+            )
         except Exception as exc:
             print(f"  [WARN] {name}: js fallback failed ({exc!r})")
             return False
@@ -827,7 +945,9 @@ class ScribeSession:
                         out[n] = (text || '').replace(/\\s+/g, ' ').trim().slice(0, 200);
                     }
                     return out;
-                }""", names)
+                }""",
+                names,
+            )
         except Exception as exc:
             print(f"  [WARN] labels unreadable: {exc!r}")
             return {}
@@ -835,8 +955,13 @@ class ScribeSession:
     async def audit(self) -> Dict[str, Any]:
         """Re-read the live form after filling and report what submit would reject."""
         if not self.page:
-            return {"ok": False, "missing_required": ["<no page>"], "overflow": [],
-                    "filled": [], "field_count": 0}
+            return {
+                "ok": False,
+                "missing_required": ["<no page>"],
+                "overflow": [],
+                "filled": [],
+                "field_count": 0,
+            }
         self.schema = parse_form_schema(await self.page.content())
         result = audit_submission(self.schema, self.attempted, self.program.bounds)
         result["program"] = self.program.key
@@ -846,7 +971,9 @@ class ScribeSession:
     def save_page_feedback(self, audit: Dict[str, Any]) -> Path:
         """Persist this run's page verdict where the next run will read it."""
         path = EVIDENCE_DIR / f"{self.program.key}_page_feedback.json"
-        path.write_text(json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8")
+        path.write_text(
+            json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         print(f"  [ADAPT] wrote {path}")
         return path
 
@@ -872,16 +999,18 @@ class ScribeSession:
                     btn = await self.page.wait_for_selector(selector, timeout=5000)
                     if btn:
                         await btn.click()
-                        await self.page.wait_for_load_state("networkidle", timeout=30000)
+                        await self.page.wait_for_load_state(
+                            "networkidle", timeout=30000
+                        )
                         submitted = True
-                        print(f"  [SUBMIT] Clicked submit button")
+                        print("  [SUBMIT] Clicked submit button")
                         break
                 except Exception as exc:
                     print(f"  [WARN] submit selector {selector!r} failed: {exc!r}")
                     continue
 
             if not submitted:
-                print(f"  [ERROR] No submit button found")
+                print("  [ERROR] No submit button found")
                 return False
 
             # Check for success indicators
@@ -896,7 +1025,9 @@ class ScribeSession:
                     await self._save_evidence("success")
                     return True
 
-            print(f"  [WARN] No success indicator found. Content preview: {content[:500]}")
+            print(
+                f"  [WARN] No success indicator found. Content preview: {content[:500]}"
+            )
             await self._save_evidence("uncertain")
             return False
 
@@ -935,6 +1066,7 @@ class ScribeSession:
         if self.playwright:
             await self.playwright.stop()
 
+
 # ── Funder eligibility (rules the form does not enforce) ────────────────
 
 ELIGIBLE_COUNTRIES_PATH = DATA_DIR / "eligible_countries.json"
@@ -970,22 +1102,29 @@ def check_eligibility(program: "GrantProgram", country: Optional[str]) -> None:
         return
     if not country:
         regions = "/".join(program.eligible_regions)
-        raise Ineligible(f"{program.name} requires {regions} eligibility; "
-                         f"no country given (--country) so it cannot be checked")
+        raise Ineligible(
+            f"{program.name} requires {regions} eligibility; "
+            f"no country given (--country) so it cannot be checked"
+        )
     for region in program.eligible_regions:
         allowed = load_eligible_countries(region)
         if allowed is None:
-            raise Ineligible(f"{program.name} requires {region} eligibility; "
-                             f"{ELIGIBLE_COUNTRIES_PATH.name} is missing or has no "
-                             f"{region!r} key, so it cannot be checked")
+            raise Ineligible(
+                f"{program.name} requires {region} eligibility; "
+                f"{ELIGIBLE_COUNTRIES_PATH.name} is missing or has no "
+                f"{region!r} key, so it cannot be checked"
+            )
         if country.casefold() not in allowed:
-            raise Ineligible(f"{country} is not on the funder's {region} list "
-                             f"({len(allowed)} countries in "
-                             f"{ELIGIBLE_COUNTRIES_PATH.name}); {program.name} "
-                             f"cannot be applied for from there")
+            raise Ineligible(
+                f"{country} is not on the funder's {region} list "
+                f"({len(allowed)} countries in "
+                f"{ELIGIBLE_COUNTRIES_PATH.name}); {program.name} "
+                f"cannot be applied for from there"
+            )
 
 
 # ── Main Application ────────────────────────────────────────────────────
+
 
 def resolve_profile_path(path: str) -> Path:
     """Find a profile from the caller's cwd or from this project's directory.
@@ -1049,10 +1188,18 @@ class ScribeApp:
             print(f"  {'':25}   URL: {prog.url}")
             print()
 
-    async def apply(self, program_key: str, profile_path: str, headless: bool = True,
-                    dry_run: bool = False, country: Optional[str] = None) -> bool:
+    async def apply(
+        self,
+        program_key: str,
+        profile_path: str,
+        headless: bool = True,
+        dry_run: bool = False,
+        country: Optional[str] = None,
+    ) -> bool:
         if program_key not in PROGRAMS:
-            raise ValueError(f"Unknown program: {program_key}. Available: {list(PROGRAMS.keys())}")
+            raise ValueError(
+                f"Unknown program: {program_key}. Available: {list(PROGRAMS.keys())}"
+            )
 
         self.program = PROGRAMS[program_key]
         # Before the browser opens: the funder's rules outrank what the form accepts.
@@ -1060,7 +1207,7 @@ class ScribeApp:
         self.load_profile(profile_path, country=country)
 
         print(f"\n{'='*60}")
-        print(f"SCRIBE — Grant Application Agent")
+        print("SCRIBE — Grant Application Agent")
         print(f"Program: {self.program.name}")
         print(f"Profile: {self.profile.project_name}")
         print(f"Method: {self.program.application_method}")
@@ -1082,38 +1229,52 @@ class ScribeApp:
             # Start from the last run's own verdict instead of rediscovering it.
             prior = load_page_feedback(self.program.key)
             if prior and prior.get("missing_required"):
-                print(f"[ADAPT] previous run ({prior.get('checked_at', '?')}) was blocked on "
-                      f"{len(prior['missing_required'])} unfilled required field(s):")
+                print(
+                    f"[ADAPT] previous run ({prior.get('checked_at', '?')}) was blocked on "
+                    f"{len(prior['missing_required'])} unfilled required field(s):"
+                )
                 for name in prior["missing_required"][:12]:
                     print(f"        - {name}")
 
             # Fill form
-            print(f"[FILL] Filling form fields...")
+            print("[FILL] Filling form fields...")
             await session.fill_form(self.profile)
 
             # Upload documents
-            print(f"[UPLOAD] Checking document uploads...")
+            print("[UPLOAD] Checking document uploads...")
             await session.upload_files(self.profile)
 
             # Ask the page whether it would accept this, before pretending to submit.
             audit = await session.audit()
             session.save_page_feedback(audit)
-            print(f"[AUDIT] {audit['field_count']} fields | filled {len(audit['filled'])} | "
-                  f"missing_required {len(audit['missing_required'])} | "
-                  f"overflow {len(audit['overflow'])} | out_of_bounds {len(audit['out_of_bounds'])}")
+            print(
+                f"[AUDIT] {audit['field_count']} fields | filled {len(audit['filled'])} | "
+                f"missing_required {len(audit['missing_required'])} | "
+                f"overflow {len(audit['overflow'])} | out_of_bounds {len(audit['out_of_bounds'])}"
+            )
             if audit["missing_required"]:
-                print("[AUDIT] required but empty: " + ", ".join(audit["missing_required"]))
+                print(
+                    "[AUDIT] required but empty: "
+                    + ", ".join(audit["missing_required"])
+                )
             if audit["overflow"]:
                 print("[AUDIT] over page maxlength: " + ", ".join(audit["overflow"]))
             if audit["out_of_bounds"]:
-                print("[AUDIT] outside funder bounds: " + ", ".join(audit["out_of_bounds"]))
+                print(
+                    "[AUDIT] outside funder bounds: "
+                    + ", ".join(audit["out_of_bounds"])
+                )
 
             # The page has already said what it will reject. Adapt instead of
             # clicking submit and reading `uncertain` back a 33rd time. This runs
             # in dry-run too, so a dry run that would be rejected is not "OK".
-            hard_blockers = audit["missing_required"] + audit["overflow"] + audit["out_of_bounds"]
+            hard_blockers = (
+                audit["missing_required"] + audit["overflow"] + audit["out_of_bounds"]
+            )
             if hard_blockers:
-                print(f"\n[BLOCKED] Not submitting: {len(hard_blockers)} problem(s) the page names.")
+                print(
+                    f"\n[BLOCKED] Not submitting: {len(hard_blockers)} problem(s) the page names."
+                )
                 for name in audit["missing_required"]:
                     print(f"          empty required field: {name}")
                 for name in audit["overflow"]:
@@ -1124,18 +1285,22 @@ class ScribeApp:
                 return False
 
             if dry_run:
-                print(f"\n[DRY RUN] Form would be accepted. Stopping before actual submission.")
+                print(
+                    "\n[DRY RUN] Form would be accepted. Stopping before actual submission."
+                )
                 await session._save_evidence("dry_run_ready")
                 return True
 
             # Submit
-            print(f"[SUBMIT] Submitting application...")
+            print("[SUBMIT] Submitting application...")
             success = await session.submit()
 
             if success:
                 print(f"\n[SUCCESS] Application submitted to {self.program.name}!")
             else:
-                print(f"\n[FAILURE] Submission may have failed. Check evidence in {session.evidence_dir}")
+                print(
+                    f"\n[FAILURE] Submission may have failed. Check evidence in {session.evidence_dir}"
+                )
 
             return success
 
@@ -1144,8 +1309,10 @@ class ScribeApp:
 
     async def _generate_application_doc(self, dry_run: bool) -> bool:
         """Generate a filled application document for manual submission."""
-        print(f"[DOC] Generating application document for {self.program.application_method} submission...")
-        
+        print(
+            f"[DOC] Generating application document for {self.program.application_method} submission..."
+        )
+
         # Build filled application data
         app_data = {
             "program": self.program.name,
@@ -1154,68 +1321,72 @@ class ScribeApp:
             "method": self.program.application_method,
             "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
             "profile": self.profile.project_name,
-            "fields": {}
+            "fields": {},
         }
-        
+
         # Fill in all fields from profile
         for field_key in self.program.fields:
             value = self.profile.get_field(field_key, self.program.key)
             if value:
                 app_data["fields"][field_key] = value
-        
+
         # Add overrides
         if self.program.key in self.profile.overrides:
             for field_key, value in self.profile.overrides[self.program.key].items():
                 if value:
                     app_data["fields"][field_key] = value
-        
+
         # Save application document
         output_dir = EVIDENCE_DIR / f"{self.program.key}_application_{int(time.time())}"
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Save JSON
         json_path = output_dir / f"application_{self.program.key}.json"
         json_path.write_text(json.dumps(app_data, indent=2))
-        
+
         # Save human-readable markdown
         md_path = output_dir / f"application_{self.program.key}.md"
         md_lines = [
             f"# {self.program.name} Application",
-            f"",
+            "",
             f"**Program:** {self.program.name}",
             f"**URL:** {self.program.url}",
             f"**Method:** {self.program.application_method}",
             f"**Generated:** {app_data['generated_at']}",
             f"**Profile:** {app_data['profile']}",
-            f"",
-            f"## Filled Fields",
-            f"",
+            "",
+            "## Filled Fields",
+            "",
         ]
         for field_key, value in app_data["fields"].items():
             md_lines.append(f"### {field_key}")
-            md_lines.append(f"")
-            md_lines.append(f"```")
+            md_lines.append("")
+            md_lines.append("```")
             md_lines.append(f"{value}")
-            md_lines.append(f"```")
-            md_lines.append(f"")
-        
+            md_lines.append("```")
+            md_lines.append("")
+
         md_path.write_text("\n".join(md_lines))
-        
-        print(f"\n[DOC] Application document generated:")
+
+        print("\n[DOC] Application document generated:")
         print(f"  JSON: {json_path}")
         print(f"  Markdown: {md_path}")
         print(f"  Directory: {output_dir}")
-        
+
         if dry_run:
-            print(f"\n[DRY RUN] Document generated. Ready for manual submission via {self.program.application_method}.")
+            print(
+                f"\n[DRY RUN] Document generated. Ready for manual submission via {self.program.application_method}."
+            )
             return True
-        
-        print(f"\n[READY] Application document ready for manual submission.")
+
+        print("\n[READY] Application document ready for manual submission.")
         print(f"Submit via: {self.program.application_method}")
         return True
 
-async def dry_run_all(profile_path: str, headless: bool = True,
-                      country: Optional[str] = None) -> int:
+
+async def dry_run_all(
+    profile_path: str, headless: bool = True, country: Optional[str] = None
+) -> int:
     """Dry-run every registered program, streaming one live log.
 
     Nothing is submitted. Each program's outcome is classified OK / BLOCKED /
@@ -1241,18 +1412,24 @@ async def dry_run_all(profile_path: str, headless: bool = True,
     results: Dict[str, Dict[str, Any]] = {}
     try:
         print(f"\n{'#'*66}")
-        print(f"# DRY RUN ALL — {len(PROGRAMS)} programs, profile {Path(profile_path).name}")
+        print(
+            f"# DRY RUN ALL — {len(PROGRAMS)} programs, profile {Path(profile_path).name}"
+        )
         print(f"# log: {log_path}")
-        print(f"# nothing will be submitted")
+        print("# nothing will be submitted")
         print(f"{'#'*66}", flush=True)
 
         app = ScribeApp()
         for key, program in PROGRAMS.items():
-            print(f"\n=== {key} | {program.application_method} | {program.url}", flush=True)
+            print(
+                f"\n=== {key} | {program.application_method} | {program.url}",
+                flush=True,
+            )
             started = time.time()
             try:
-                ok = await app.apply(key, profile_path, headless=headless, dry_run=True,
-                                     country=country)
+                ok = await app.apply(
+                    key, profile_path, headless=headless, dry_run=True, country=country
+                )
                 if program.application_method != "web_form":
                     # Nothing was loaded, typed into or checked: an "ok" here would be
                     # a claim about a page that was never opened.
@@ -1272,8 +1449,12 @@ async def dry_run_all(profile_path: str, headless: bool = True,
                 detail = f"{type(exc).__name__}: {exc}"
                 print(f"[TRACE] {detail}", flush=True)
             elapsed = time.time() - started
-            results[key] = {"state": state, "detail": detail, "seconds": round(elapsed, 1),
-                            "method": program.application_method}
+            results[key] = {
+                "state": state,
+                "detail": detail,
+                "seconds": round(elapsed, 1),
+                "method": program.application_method,
+            }
             print(f"--- {key}: {state} in {elapsed:.1f}s {detail}", flush=True)
 
         print(f"\n{'='*66}")
@@ -1287,8 +1468,10 @@ async def dry_run_all(profile_path: str, headless: bool = True,
         unexercised = [k for k, r in results.items() if r["state"] == "UNEXERCISED"]
         clean = [k for k, r in results.items() if r["state"] == "OK"]
         print(f"{'-'*66}")
-        print(f"{len(clean)} ok | {len(unexercised)} unexercised | {len(skipped)} skipped | "
-              f"{len(blocked)} blocked | {len(errors)} error")
+        print(
+            f"{len(clean)} ok | {len(unexercised)} unexercised | {len(skipped)} skipped | "
+            f"{len(blocked)} blocked | {len(errors)} error"
+        )
         for key in unexercised:
             print(f"unexercised: {key} — {results[key]['detail']}")
         for key in skipped:
@@ -1312,77 +1495,138 @@ def selftest_fields() -> int:
     must resolve to nothing, because a wrong value in a grant form is worse than
     a blank one a human finishes.
     """
-    profile = ProjectProfile.from_dict({
-        "project_name": "Project Nurse Ratchet",
-        "project_description": "A local-first clinical decision journal.",
-        "project_url": "https://example.invalid/nurse-ratchet",
-        "github_url": "https://github.com/example/nurse-ratchet",
-        "team_size": 1,
-        "funding_amount": "$10,000",
-        "contact_name": "Clint Oxford",
-        "contact_email": "clinton@example.invalid",
-        "budget_breakdown": "Two laptops and one clinical advisor.",
-        # The real profile carries attachment paths in these two keys. They must
-        # never be typed into a text field, and must not shadow a usable answer.
-        "budget": "profiles/nurse_ratchet_budget.xlsx",
-        "prototype_video": "profiles/nurse_ratchet_demo.mp4",
-        "country": "United States",
-    })
+    profile = ProjectProfile.from_dict(
+        {
+            "project_name": "Project Nurse Ratchet",
+            "project_description": "A local-first clinical decision journal.",
+            "project_url": "https://example.invalid/nurse-ratchet",
+            "github_url": "https://github.com/example/nurse-ratchet",
+            "team_size": 1,
+            "funding_amount": "$10,000",
+            "contact_name": "Clint Oxford",
+            "contact_email": "clinton@example.invalid",
+            "budget_breakdown": "Two laptops and one clinical advisor.",
+            # The real profile carries attachment paths in these two keys. They must
+            # never be typed into a text field, and must not shadow a usable answer.
+            "budget": "profiles/nurse_ratchet_budget.xlsx",
+            "prototype_video": "profiles/nurse_ratchet_demo.mp4",
+            "country": "United States",
+        }
+    )
     checks = [
-        ("project[about_project]", "", "A local-first clinical decision journal.",
-         "nested name, synonym"),
+        (
+            "project[about_project]",
+            "",
+            "A local-first clinical decision journal.",
+            "nested name, synonym",
+        ),
         ("project[title]", "", "Project Nurse Ratchet", "nested name, title"),
         ("subscriberEmail", "", "clinton@example.invalid", "camelCase name, email"),
         ("amount", "", "$10,000", "hand-tuned alias still resolves"),
-        ("tfa_1115", "What is your first name?", "Clint", "opaque id resolved by label"),
-        ("tfa_3021", "Describe the problem you are solving in one paragraph",
-         "A local-first clinical decision journal.", "opaque id + description label"),
+        (
+            "tfa_1115",
+            "What is your first name?",
+            "Clint",
+            "opaque id resolved by label",
+        ),
+        (
+            "tfa_3021",
+            "Describe the problem you are solving in one paragraph",
+            "A local-first clinical decision journal.",
+            "opaque id + description label",
+        ),
         ("tfa_1115", "", "", "CONTROL: opaque id with no label invents nothing"),
-        ("project[about_me]", "Tell us about yourself", "",
-         "CONTROL: a bio box never receives the project blurb"),
+        (
+            "project[about_me]",
+            "Tell us about yourself",
+            "",
+            "CONTROL: a bio box never receives the project blurb",
+        ),
         ("tfa_3019", "Estimated Budget", "$10,000", "measured: number, not the essay"),
-        ("tfa_3021", "Breakdown of Expenses", "Two laptops and one clinical advisor.",
-         "measured: expenses map to the breakdown"),
-        ("tfa_37", "Multimedia URL", "",
-         "CONTROL: a local .mp4 path is not a URL the funder can open, and the "
-         "project homepage is not a substitute"),
-        ("tfa_22", "Country", "United States", "argument-seeded country fills a select"),
-        ("tfa_3022", "Dedicated Funding Areas", "",
-         "CONTROL: 'funding areas' is a list of subjects, not a sum"),
+        (
+            "tfa_3021",
+            "Breakdown of Expenses",
+            "Two laptops and one clinical advisor.",
+            "measured: expenses map to the breakdown",
+        ),
+        (
+            "tfa_37",
+            "Multimedia URL",
+            "",
+            "CONTROL: a local .mp4 path is not a URL the funder can open, and the "
+            "project homepage is not a substitute",
+        ),
+        (
+            "tfa_22",
+            "Country",
+            "United States",
+            "argument-seeded country fills a select",
+        ),
+        (
+            "tfa_3022",
+            "Dedicated Funding Areas",
+            "",
+            "CONTROL: 'funding areas' is a list of subjects, not a sum",
+        ),
         ("subscriberResearch", "", "", "CONTROL: an unknown word invents nothing"),
-        ("project_photos_attributes_0_caption", "Add an optional caption", "",
-         "CONTROL: an optional caption is not a profile field"),
+        (
+            "project_photos_attributes_0_caption",
+            "Add an optional caption",
+            "",
+            "CONTROL: an optional caption is not a profile field",
+        ),
     ]
     failures = 0
     for name, label, expected, why in checks:
         got = profile.get_field(name, "", label=label)
         ok = got == expected
         failures += 0 if ok else 1
-        print(f"  [selftest] {name!r} {('-> ' + repr(got)) if got else '-> (blank)'} "
-              f"{'ok' if ok else 'FAIL expected ' + repr(expected)}  ({why})")
-    print(f"  [selftest] {len(checks) - failures}/{len(checks)} field-resolution controls ok")
+        print(
+            f"  [selftest] {name!r} {('-> ' + repr(got)) if got else '-> (blank)'} "
+            f"{'ok' if ok else 'FAIL expected ' + repr(expected)}  ({why})"
+        )
+    print(
+        f"  [selftest] {len(checks) - failures}/{len(checks)} field-resolution controls ok"
+    )
     return 1 if failures else 0
 
 
 async def main():
     parser = argparse.ArgumentParser(
         prog="scribe",
-        description="Project Scribe — Agent form-filler for grant applications"
+        description="Project Scribe — Agent form-filler for grant applications",
     )
     parser.add_argument("--program", help="Grant program key (use --list to see all)")
     parser.add_argument("--profile", help="Path to project profile JSON")
     parser.add_argument("--list", action="store_true", help="List available programs")
     parser.add_argument("--create-profile", help="Create a template profile at PATH")
-    parser.add_argument("--headless", action="store_true", default=True, help="Run browser headless")
-    parser.add_argument("--no-headless", action="store_false", dest="headless", help="Run browser visible")
-    parser.add_argument("--dry-run", action="store_true", help="Fill form but don't submit")
-    parser.add_argument("--dry-run-all", action="store_true",
-                        help="Dry-run every registered program into one live log (submits nothing)")
-    parser.add_argument("--country",
-                        help="Applicant's country of residence, for funder eligibility rules "
-                             "the form does not enforce (e.g. NLnet requires Horizon Europe)")
-    parser.add_argument("--selftest-fields", action="store_true",
-                        help="Check field resolution against measured form shapes (no network)")
+    parser.add_argument(
+        "--headless", action="store_true", default=True, help="Run browser headless"
+    )
+    parser.add_argument(
+        "--no-headless",
+        action="store_false",
+        dest="headless",
+        help="Run browser visible",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Fill form but don't submit"
+    )
+    parser.add_argument(
+        "--dry-run-all",
+        action="store_true",
+        help="Dry-run every registered program into one live log (submits nothing)",
+    )
+    parser.add_argument(
+        "--country",
+        help="Applicant's country of residence, for funder eligibility rules "
+        "the form does not enforce (e.g. NLnet requires Horizon Europe)",
+    )
+    parser.add_argument(
+        "--selftest-fields",
+        action="store_true",
+        help="Check field resolution against measured form shapes (no network)",
+    )
 
     args = parser.parse_args()
 
@@ -1402,19 +1646,27 @@ async def main():
     if args.dry_run_all:
         if not args.profile:
             parser.error("--dry-run-all requires --profile")
-        return await dry_run_all(args.profile, headless=args.headless, country=args.country)
+        return await dry_run_all(
+            args.profile, headless=args.headless, country=args.country
+        )
 
     if not args.program or not args.profile:
         parser.print_help()
         return 1
 
     try:
-        success = await app.apply(args.program, args.profile, headless=args.headless,
-                                  dry_run=args.dry_run, country=args.country)
+        success = await app.apply(
+            args.program,
+            args.profile,
+            headless=args.headless,
+            dry_run=args.dry_run,
+            country=args.country,
+        )
     except Ineligible as exc:
         print(f"[SKIP] {exc}")
         return 2  # could not be performed as configured — neither a pass nor a failure
     return 0 if success else 1
+
 
 if __name__ == "__main__":
     sys.exit(asyncio.run(main()))
