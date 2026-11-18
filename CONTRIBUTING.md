@@ -1,67 +1,45 @@
-# Contributing to Project Scribe
+# Contributing to Scribe
 
-Thank you for considering a contribution to Project Scribe!
+## How to Contribute
 
-## Quick Start
+### Reporting Issues
+- Use the bug report template (.github/ISSUE_TEMPLATE/bug_report.yml)
+- Include reproduction steps, expected vs actual behavior
+- Specify Python version, OS, and scribe version
 
+### Pull Request Process
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-change`
-3. Make your changes
-4. Run tests: `python -m pytest tests/ -v`
-5. Submit a pull request
+2. Create a feature branch from `main`
+3. Make your changes with tests
+4. Ensure all tests pass: `python -m pytest -v`
+5. Update CHANGELOG.md
+6. Submit PR with description of changes
 
-## Code Standards
+### Coding Conventions
+- **Stdlib-first**: Prefer stdlib over external dependencies
+- **Thread safety**: Use proper locking for concurrent access
+- **Docstrings**: All public methods must have docstrings with Args/Returns
+- **Type hints**: Use type annotations for all public APIs
 
-- **License**: All contributions must be compatible with CDDL-1.1 (the project license)
-- **Python**: 3.10+ (requires scrapling, curl_cffi)
-- **Style**: Follow existing code style
-- **Tests**: New functionality must include tests
-- **Documentation**: Update relevant docs
-
-## What We Accept
-
-- New grant program definitions (add to PROGRAMS registry)
-- Improved bypass techniques (Cloudflare, reCAPTCHA, hCaptcha, etc.)
-- Better form field detection/mapping
-- Evidence collection improvements
-- Profile schema enhancements
-
-## Grant Program Definition
-
-To add a new grant program, add a `GrantProgram` entry to the `PROGRAMS` dict in `scribe.py`:
-
-```python
-"program_key": GrantProgram(
-    key="program_key",
-    name="Program Name",
-    url="https://example.com/apply",
-    description="What this program funds",
-    fields={
-        "profile_field": "css_selector_or_xpath",
-    },
-    required_docs=["doc1", "doc2"],
-    bypass_config={"cloudflare": True, "recaptcha": "v2"},
-    submit_selector="button[type='submit']",
-    success_indicators=["submitted", "confirmation"],
-),
+### Test Organization
+```
+tests/
+  test_scribe_*.py    # Scribe core tests
+  test_docs_*.py      # Documentation generation tests
 ```
 
-## Pull Request Process
+### Running Tests
+```bash
+# Run all tests
+python -m pytest tests/ -v
 
-1. Ensure all tests pass
-2. The maintainers will review and merge
+# Run with coverage
+python -m pytest --cov=scribe tests/ -v
+```
 
-## Reporting Issues
-
-Use the GitHub issue tracker. Please include:
-- Steps to reproduce
-- Expected vs actual behavior
-- Program key, profile (sanitized), evidence screenshots
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for reporting security vulnerabilities.
-
-## License
-
-By contributing, you agree that your contributions will be licensed under CDDL-1.1.
+### Pull Request Checklist
+- [ ] Tests written and passing
+- [ ] Docstrings added for public APIs
+- [ ] Type hints added
+- [ ] CHANGELOG.md updated
+- [ ] No breaking changes without version bump

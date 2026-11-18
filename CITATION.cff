@@ -1,30 +1,31 @@
 cff-version: 1.2.0
-message: "If you use this software, cite it as below. If you cite a measured figure, cite the commit and the split it came from."
-title: "Project Scribe — Agent form-filler for grant applications using browser bypass"
-version: 0.1.0
-date-released: "2026-11-03"
-license: CDDL-1.1
-type: software
-abstract: >-
-  Scribe is an agent-driven form-filler for grant applications. It uses the
-  same browser bypass stack as the BCC re-investigation (scrapling + curl_cffi
-  headers) to navigate Cloudflare, reCAPTCHA, and JS challenges, then fills
-  and submits grant applications from a structured project profile.
+message: "If you use this software, please cite it as below."
 authors:
-  - name: "Project Scribe contributors"
+  - family-names: "Azazael"
+    given-names: "Contributors"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+title: "Scribe: Documentation Generation Tooling"
+version: 0.1.0
+doi: "10.5281/zenodo.XXXXXXX"
+date-released: 2026-11-18
+url: "https://github.com/myzticalbabe/scribe"
+preferred-citation:
+  type: "software"
+  authors:
+    - family-names: "Azazael"
+      given-names: "Contributors"
+  title: "Scribe: Documentation Generation Tooling"
+  year: 2026
+  version: "0.1.0"
+  doi: "10.5281/zenodo.XXXXXXX"
+  url: "https://github.com/myzticalbabe/scribe"
 keywords:
-  - grant applications
-  - form automation
-  - browser bypass
-  - cloudflare bypass
-  - agent tooling
-  - open source
-references:
-  - type: software
-    title: "scrapling"
-    notes: "Browser automation with bypass capabilities"
-    url: "https://github.com/scrapling/scrapling"
-  - type: software
-    title: "Project ELIZA"
-    notes: "Forensic investigation suite with similar bypass stack"
-    url: "https://github.com/myzticalbabe/azazael/tree/main/Project_ELIZA"
+  - "documentation"
+  - "generation"
+  - "mermaid"
+  - "api"
+  - "python"
+license: "CDDL-1.1"
+repository: "https://github.com/myzticalbabe/scribe"
+repository-code: "https://github.com/myzticalbabe/scribe"
+repository-artifact: "https://pypi.org/project/scribe/"

@@ -5,52 +5,36 @@
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.1.x   | :white_check_mark: |
+| < 0.1   | :x:                |
 
 ## Reporting a Vulnerability
 
-**Do not report security vulnerabilities via public GitHub issues.**
+We take security vulnerabilities seriously. If you discover a security vulnerability in Scribe, please report it responsibly:
 
-Instead, please report them via email to **security@azazael.local**.
+1. **Do not** create a public GitHub issue for the vulnerability
+2. Email the details to security@scribe.dev
+3. Include:
+   - Description of the vulnerability
+   - Steps to reproduce
+   - Potential impact
+   - Any suggested fixes
 
-Include the following information:
+We will:
+- Acknowledge receipt within 48 hours
+- Provide a preliminary assessment within 5 business days
+- Keep you informed of progress
+- Credit you in the security advisory (unless you prefer anonymity)
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Any known workarounds
+## Security Best Practices
 
-We will acknowledge receipt within 48 hours and provide a status update
-within 5 business days.
-
-## Security Model
-
-Scribe is an agent-driven form-filler with the following security properties:
-
-1. **No credential storage** — Profiles contain no secrets; only public project info
-2. **Session isolation** — Each application run uses a fresh browser context
-3. **Cookie persistence** — Session cookies stored locally, encrypted at rest
-4. **No network credentials** — Does not store grant program credentials
-5. **Evidence integrity** — Screenshots and HTML saved with timestamps for audit
-
-## Bypass Stack Security
-
-Scribe uses the same bypass stack as BCC re-investigation:
-
-- **scrapling** — Browser automation with built-in challenge handling
-- **curl_cffi headers** — Realistic TLS/HTTP fingerprints
-- **No credentialed bypass** — Does not use stolen cookies or credentials
-- **Rate limiting** — Respects program rate limits (configurable per program)
-
-## Disclosure Policy
-
-We follow coordinated disclosure. Once a vulnerability is confirmed and a
-fix is available, we will:
-
-1. Release a patch
-2. Publish a security advisory
-3. Credit the reporter (unless they request anonymity)
+- Keep dependencies updated
+- Use `pip-audit` or `safety` to check for known vulnerabilities
+- Enable 2FA on your GitHub account
+- Never commit secrets or API keys
 
 ## Scope
 
-This policy covers `scribe.py`, `bypass.py`, `forms.py`, and the `profiles/`
-directory. The scrapling dependency has its own security policy.
+This security policy applies to:
+- The scribe package on PyPI
+- The GitHub repository at github.com/myzticalbabe/scribe
+- All official distributions

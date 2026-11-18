@@ -2,68 +2,58 @@
 
 ## Purpose
 
-This policy governs how Project Scribe handles sensitive information
-encountered during grant application form filling, including project
-details, contact information, and submission receipts.
+This document outlines the disclosure policy for the Scribe project, governing how information about the project, its development, and its community is shared publicly.
 
-## What We Do Not Distribute
+## Public Information
 
-Project Scribe **does not distribute**:
+The following information is considered public and may be freely shared:
 
-- Agent project profiles (profiles/*.json) — these contain proprietary project details
-- Contact information (emails, names) from profiles
-- Grant program credentials or authentication tokens
-- Session cookies (stored locally, encrypted at rest)
-- Submission receipts and confirmation codes
-- Evidence screenshots and HTML captures (stored locally in evidence/)
+- Source code (MIT/CDDL licensed)
+- Documentation and README files
+- Release notes and changelogs
+- Public issue discussions (excluding security issues)
+- CI/CD pipeline status
+- Contributor guidelines
 
-## What We Do Distribute
+## Restricted Information
 
-- The **METHOD** (form detection, field mapping, bypass techniques)
-- Grant program definitions (publicly available application URLs and requirements)
-- Open-source tooling for form automation and browser bypass
-- Template profiles (with placeholder data only)
+The following information must NOT be disclosed without explicit authorization:
 
-## Data Handling During Application
+- Security vulnerabilities (until patched and disclosed per SECURITY.md)
+- Private contributor information (emails, addresses, etc.)
+- Internal project management discussions
+- Unreleased features or roadmap details marked as confidential
+- Infrastructure credentials, API keys, or secrets
+- Private repository contents (if any)
 
-1. **Profile Loading** — Profiles loaded from local JSON, never transmitted except to target form
-2. **Form Filling** — Data sent only to the grant program's application endpoint
-3. **Session Persistence** — Cookies stored locally in `sessions/` with timestamps
-4. **Evidence Collection** — Screenshots and HTML saved to `evidence/` with timestamps
-5. **Cleanup** — Sessions can be purged with `--clean-sessions` flag (not yet implemented)
+## Disclosure Process
 
-## Evidence Retention
+### Security Issues
+Follow the process in SECURITY.md — private disclosure to security@scribe.dev
 
-Evidence in `evidence/` serves as an audit trail:
+### General Project Information
+- Public announcements via GitHub Releases
+- Blog posts and social media by maintainers only
+- Conference talks and presentations with maintainer approval
 
-- **Screenshots** — Full-page PNGs at each stage (navigation, fill, submit, result)
-- **HTML Captures** — Complete page source for forensic analysis
-- **Network Logs** — Request/response metadata (when enabled)
-- **Retention** — Default 90 days; configurable per program
+### Media Inquiries
+Direct all media inquiries to the project maintainers at maintainers@scribe.dev
 
-## Handling Sensitive Data in Profiles
+## Compliance
 
-If a profile contains unexpectedly sensitive data:
+All contributors and maintainers must:
+- Not disclose restricted information
+- Follow the security disclosure process for vulnerabilities
+- Obtain approval before speaking on behalf of the project
+- Respect contributor privacy
 
-1. **Stop** — Do not submit the application
-2. **Redact** — Remove sensitive fields from the profile file
-3. **Report** — Notify maintainers via security@azazael.local
-4. **Rotate** — Clear sessions and evidence for that profile
+## Violations
 
-## Grant Program Terms Compliance
-
-Scribe users are responsible for:
-
-- Reading and complying with each grant program's terms of service
-- Not using Scribe for programs that prohibit automated submission
-- Respecting rate limits and submission windows
-- Providing accurate information in applications
-
-## Attribution
-
-The Contributor Covenant text in CODE_OF_CONDUCT.md is used under
-CC BY 4.0 with attribution retained in that file.
+Violations of this policy may result in:
+- Removal from the project (contributors)
+- Revocation of maintainer privileges
+- Legal action (for disclosure of trade secrets or PII)
 
 ## Contact
 
-For questions about this policy, contact **disclosure@azazael.local**.
+For questions about this policy, contact maintainers@scribe.dev
