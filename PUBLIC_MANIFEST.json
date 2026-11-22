@@ -1,9 +1,9 @@
 {
   "project": "scribe",
   "version": "0.1.0",
-  "description": "Scribe — Documentation Generation Tooling extracted from AZAZAEL",
+  "description": "Scribe \u2014 Documentation Generation Tooling extracted from AZAZAEL",
   "repository": "https://github.com/myzticalbabe/scribe",
-  "license": "CDDL-1.1",
+  "license": "LicenseRef-SoulForge-1.0",
   "authors": [
     {
       "name": "Azazael Contributors",
