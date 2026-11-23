@@ -1,4 +1,4 @@
-# CRADLE — a verification chain for claims made by AI agents
+> **Licence update (2026-11-23):** this document is a historical record dated 2026-11-03. The project licence is now the Soul Forge License v1.0 (LicenseRef-SoulForge-1.0) — SOUL LICENCE ONLY. CDDL-1.1 references below are superseded and retained as history only.\n\n# CRADLE — a verification chain for claims made by AI agents
 
 **Proposal to the NLnet Foundation / NGI Zero**
 **Applicant:** Clint Oxford (individual), United States
